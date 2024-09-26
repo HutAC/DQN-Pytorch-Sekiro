@@ -1,0 +1,54 @@
+# -*- codeing = utf-8 -*-
+"""
+@Time : 2024/9/22
+@Author : AC
+@File : img.py
+@Software : PyCharm
+"""
+import numpy as np
+import win32api
+import win32con
+import win32gui
+import win32ui
+
+
+def grab_screen(region=None):
+    hwin = win32gui.GetDesktopWindow()
+
+    if region:
+        left, top, x2, y2 = region
+        width = x2 - left + 1
+        height = y2 - top + 1
+    else:
+        width = win32api.GetSystemMetrics(win32con.SM_CXVIRTUALSCREEN)
+        height = win32api.GetSystemMetrics(win32con.SM_CYVIRTUALSCREEN)
+        left = win32api.GetSystemMetrics(win32con.SM_XVIRTUALSCREEN)
+        top = win32api.GetSystemMetrics(win32con.SM_YVIRTUALSCREEN)
+
+    hwindc = win32gui.GetWindowDC(hwin)
+    srcdc = win32ui.CreateDCFromHandle(hwindc)
+    memdc = srcdc.CreateCompatibleDC()
+    bmp = win32ui.CreateBitmap()
+    bmp.CreateCompatibleBitmap(srcdc, width, height)
+    memdc.SelectObject(bmp)
+    memdc.BitBlt((0, 0), (width, height), srcdc, (left, top), win32con.SRCCOPY)
+
+    signedIntsArray = bmp.GetBitmapBits(True)
+    img = np.fromstring(signedIntsArray, dtype='uint8')
+    img.shape = (height, width, 4)
+
+    srcdc.DeleteDC()
+    memdc.DeleteDC()
+    win32gui.ReleaseDC(hwin, hwindc)
+    win32gui.DeleteObject(bmp.GetHandle())
+
+    return img
+    # BGRA（蓝色、绿色、红色、透明度）
+    # 默认创建的位图可能不是32位BGRA格式，这取决于系统的默认位图格式
+
+def main():
+    print("hello world")
+
+
+if __name__ == "__main__":
+    main()
